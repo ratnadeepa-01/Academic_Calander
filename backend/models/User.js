@@ -41,6 +41,14 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  isLocked: {
+    type: Boolean,
+    default: false,
+  },
+  failedAttempts: {
+    type: Number,
+    default: 0,
+  },
 }, {
   timestamps: true,
 });

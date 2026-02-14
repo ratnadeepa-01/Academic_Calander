@@ -1,18 +1,18 @@
 import express from "express";
-import mongoose from "mongoose";
 import dotenv from "dotenv";
+import cors from "cors";
 import calendarRoutes from "./routes/calendarRoutes.js";
 import activityRoutes from "./routes/activityRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import dbConnect from "./config/db.js";
+
 dotenv.config();
+dbConnect();
 
 const app = express();
+app.use(cors());
 app.use(express.json());
-
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB Connected"))
-  .catch(err => console.log(err));
 
 app.use("/api/calendar", calendarRoutes);
 app.use("/api/activity", activityRoutes);

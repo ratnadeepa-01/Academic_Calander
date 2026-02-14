@@ -6,7 +6,10 @@ import {
 
 const router = express.Router();
 
-router.post("/academic-year", createAcademicYear);
+import { protect } from "../middleware/authMiddleware.js";
+import { authorizeRoles } from "../middleware/roleMiddleware.js";
+
+router.post("/academic-year", protect, authorizeRoles("Admin"), createAcademicYear);
 router.get("/academic-year", getAcademicYears);
 
 export default router;

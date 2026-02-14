@@ -10,7 +10,15 @@ export const loginUser = async (req, res) => {
   try {
       const user = await User.findOne({ email }).populate('role department');
 
-      if (user && (await user.matchPassword(password))) {
+      if (!user) {
+        return res.status(401).json({ message: 'Invalid email or password' });
+      }
+
+      if (user.isLocked) {
+        return res.status(403).json({ message: "Account locked due to multiple failed login attempts" });
+      }
+
+      if (await user.matchPassword(password)) {
         if (!user.isActive) {
             return res.status(401).json({ message: 'User is deactivated' });
         }
@@ -18,6 +26,10 @@ export const loginUser = async (req, res) => {
         if (!user.role) {
             return res.status(500).json({ message: 'User role not found or invalid' });
         }
+
+        // Reset failed attempts on success
+        user.failedAttempts = 0;
+        await user.save();
 
         res.json({
             _id: user._id,
@@ -29,6 +41,13 @@ export const loginUser = async (req, res) => {
             token: generateToken(user._id, user.role._id, user.department ? user.department._id : null),
         });
       } else {
+        // Increment failed attempts
+        user.failedAttempts += 1;
+        if (user.failedAttempts >= 5) {
+          user.isLocked = true;
+        }
+        await user.save();
+        
         res.status(401).json({ message: 'Invalid email or password' });
       }
   } catch (error) {
