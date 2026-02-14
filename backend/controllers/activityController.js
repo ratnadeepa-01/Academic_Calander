@@ -75,8 +75,56 @@ export const createActivity = async (req, res) => {
 // GET ACTIVITIES (You forgot this earlier)
 export const getActivities = async (req, res) => {
   try {
-    const activities = await Activity.find().populate("academicYearId");
+
+    const user = req.user;
+    const roleName = user.role.name;
+    const userDepartmentId = user.department?._id;
+    const userId = user._id;
+
+    let filter = {};
+
+    // Admin sees everything
+    if (roleName === "Admin") {
+      filter = {};
+    }
+
+    // HOD sees institution + department activities
+    else if (roleName === "HOD") {
+      filter = {
+        $or: [
+          { scope: "institution" },
+          { department: userDepartmentId }
+        ]
+      };
+    }
+
+    // Staff sees institution + department + assigned activities
+    else if (roleName === "Staff") {
+      filter = {
+        $or: [
+          { scope: "institution" },
+          { department: userDepartmentId },
+          { assignedTo: userId }
+        ]
+      };
+    }
+
+    // Student sees institution + department + assigned activities
+    else if (roleName === "Student") {
+      filter = {
+        $or: [
+          { scope: "institution" },
+          { department: userDepartmentId },
+          { assignedTo: userId }
+        ]
+      };
+    }
+
+    const activities = await Activity.find(filter)
+      .populate("academicYearId");
+
     res.status(200).json(activities);
+
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
