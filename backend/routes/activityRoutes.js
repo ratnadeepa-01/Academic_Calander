@@ -1,13 +1,10 @@
-import { createActivity, getActivities, updateActivity } from "../controllers/activityController.js";
+import express from "express";
+import { createActivity, getActivities } from "../controllers/activityController.js";
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-import { protect } from "../middleware/authMiddleware.js";
-import { authorizeRoles } from "../middleware/roleMiddleware.js";
-
-router.post("/activity", protect, authorizeRoles("Admin", "HOD"), createActivity);
+router.post("/activity", protect, createActivity);
 router.get("/activity", protect, getActivities);
-router.put("/activity/:id", protect, updateActivity);
 
 export default router;
-

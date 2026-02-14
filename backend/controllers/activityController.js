@@ -116,39 +116,56 @@ export const updateActivity = async (req, res) => {
 // GET ACTIVITIES
 export const getActivities = async (req, res) => {
   try {
-    let query = {};
-    const userRole = req.user.role.name;
-    const userDept = req.user.department?.code; // Assuming Activity.department stores the code
 
-    if (userRole === "Admin") {
-      // Admin sees all
-      query = {};
-    } else if (userRole === "HOD") {
-      // HOD sees department activities
-      query = { department: userDept };
-    } else if (userRole === "Staff") {
-      // Staff sees department activities OR assigned activities
-      query = {
-        $or: [
-          { department: userDept },
-          { assignedTo: req.user._id }
-        ]
-      };
-    } else if (userRole === "Student") {
-      // Student sees institution wide or department activities
-      query = {
-        $or: [
-           { scope: "institution" },
-           { department: userDept }
-        ]
-      };
-    } else {
-        // Fallback for unknown roles (e.g. Guest?)
-        query = { scope: "institution" };
+    const user = req.user;
+    const roleName = user.role.name;
+    const userDepartmentId = user.department?._id;
+    const userId = user._id;
+
+    let filter = {};
+
+    // Admin sees everything
+    if (roleName === "Admin") {
+      filter = {};
     }
 
-    const activities = await Activity.find(query).populate("academicYearId");
+    // HOD sees institution + department activities
+    else if (roleName === "HOD") {
+      filter = {
+        $or: [
+          { scope: "institution" },
+          { department: userDepartmentId }
+        ]
+      };
+    }
+
+    // Staff sees institution + department + assigned activities
+    else if (roleName === "Staff") {
+      filter = {
+        $or: [
+          { scope: "institution" },
+          { department: userDepartmentId },
+          { assignedTo: userId }
+        ]
+      };
+    }
+
+    // Student sees institution + department + assigned activities
+    else if (roleName === "Student") {
+      filter = {
+        $or: [
+          { scope: "institution" },
+          { department: userDepartmentId },
+          { assignedTo: userId }
+        ]
+      };
+    }
+
+    const activities = await Activity.find(filter)
+      .populate("academicYearId");
+
     res.status(200).json(activities);
+
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
